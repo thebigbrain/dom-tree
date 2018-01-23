@@ -28,7 +28,7 @@ const parse = (html = '') => {
 	const encounterTokenClosed = (c) => {
 		advance();
 		c = html[i];
-		if (c !== '>') console.log('reach invalid token end', html.substr(i - 3, 20));
+		if (c !== '>') console.error('reach invalid token end', html.substr(i - 3, 20));
 	}
 
 	const advanceCommentEnd = () => {
@@ -62,6 +62,7 @@ const parse = (html = '') => {
 			while (isInRange()) {
 				if (c == ' ') {
 					if (token) break;
+					console.error('syntaxt error: invalid token')
 				} else if (c == '/') {
 					tokenClosed = true;
 					encounterTokenClosed();
@@ -89,6 +90,7 @@ const parse = (html = '') => {
 	const scanAttrs = () => {
 		let c = html[i];
 		if (currentToken && c == ' ') {
+			console.log('get attrs for token', currentToken.name)
 			let start = end = i;
 			let tokenClosed = false;
 			advance();
@@ -108,7 +110,6 @@ const parse = (html = '') => {
 					advance();
 				}
 			}
-			if(tokenClosed) currentToken.shift();
 			if(end > start) {
 				let attrs = html.substring(start, end).split(' ');
 				attrs.forEach(attr => {
@@ -117,6 +118,10 @@ const parse = (html = '') => {
 						currentToken.attrs[a[0].replace(/ /g, '')] = a[1] ? a[1].replace(/ /g, '') : true;
 					}
 				});
+			}
+			if(tokenClosed) {
+				unclosedTokens.shift();
+				currentToken = unclosedTokens[0] || null;
 			}
 		}
 	}
