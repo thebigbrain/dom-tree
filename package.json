@@ -1,0 +1,24 @@
+{
+  "name": "dom-tree",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dom-tree.js",
+  "scripts": {
+    "build": "tsc -p ./src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thebigbrain/dom-tree.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thebigbrain/dom-tree/issues"
+  },
+  "homepage": "https://github.com/thebigbrain/dom-tree#readme",
+  "devDependencies": {
+    "rollup": "^0.55.3",
+    "typescript": "^2.7.1"
+  }
+}
