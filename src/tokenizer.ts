@@ -1,29 +1,13 @@
 export enum Token {
   EOF,
   LEFTARROW,
-  RRIGHTARROW,
-  BACKSLASH,
+  RIGHTARROW,
+  SLASH,
   EQUAL,
   SINGLEQUOTE,
   DOUBLEQUOTE,
   IDENTIFIER,
-  TAG_A,
-  TAG_BR,
-  TAG_DIV,
-  TAG_EM,
-  TAG_FIGURE,
-  TAG_I,
-  TAG_IMG,
-  TAG_LI,
-  TAB_OL,
-  TAG_P,
-  TAG_SPAN,
-  TAG_TABLE,
-  TAG_TBODY,
-  TAG_TD,
-  TAG_TH,
-  TAG_TR,
-  TAG_UL
+  COMMENT
 };
 
 let lastChar = ' ';
@@ -40,15 +24,6 @@ function isAlpha(c: string): boolean {
   return /[a-zA-Z0-9]/.test(c);
 }
 
-function getTag(str: string): Token {
-  str = str.toLowerCase();
-  switch (str) {
-    case 'a': return Token.TAG_A;
-    default: return Token.IDENTIFIER;
-  }
-}
-
-
 export class Tokenizer {
   private lastChar: string;
   private identifierStr: string;
@@ -60,23 +35,28 @@ export class Tokenizer {
     this.pos = 0;
   }
 
+  public getTokenValue(): string {
+    return this.identifierStr;
+  }
+
   public getToken(): Token {
     lastChar = this.getChar();
     while (isSpace(lastChar) || isEndOfLine(lastChar)) {
       lastChar = this.getChar();
     }
+    this.identifierStr = lastChar;
     if (isAlpha(lastChar)) {
-      this.identifierStr = lastChar;
       while (isAlpha((lastChar = this.getChar()))) {
         this.identifierStr += lastChar;
       }
-      return getTag(this.identifierStr);
+      this.stepback();
+      return Token.IDENTIFIER;
     }
     switch (lastChar) {
       case '=': return Token.EQUAL;
-      case '<': return Token.LEFTARROW;
-      case '/': return Token.BACKSLASH;
-      case '>': return Token.RRIGHTARROW;
+      case '<': return this.getComment();
+      case '/': return Token.SLASH;
+      case '>': return Token.RIGHTARROW;
       case '\'':
       case '\"':
         return this.getQuoteStr(lastChar);
@@ -84,13 +64,28 @@ export class Tokenizer {
         break;
     }
     if (lastChar !== '') {
-      this.identifierStr = lastChar;
-      while((lastChar = this.getChar()) !== '<') {
+      while ((lastChar = this.getChar()) !== '<' && lastChar !== '') {
         this.identifierStr += lastChar;
       }
+      this.stepback();
       return Token.IDENTIFIER;
     }
     return Token.EOF;
+  }
+
+  private getComment(): Token {
+    if (this.previewNextChar() === '!') {
+      this.identifierStr = this.previewNextChar(-1) + lastChar;
+      if (this.previewNextChar(1) !== '-' || this.previewNextChar(2) !== '-') {
+        throw 'invalid tag';
+      }
+      while(!((lastChar = this.getChar()) === '>' && this.previewNextChar(-1) !== '-' && this.previewNextChar(-2) !== '-')) {
+        this.identifierStr += lastChar;
+      }
+      this.identifierStr += lastChar;
+      return Token.COMMENT;
+    }
+    return Token.LEFTARROW;
   }
 
   private getQuoteStr(quote: string): Token {
@@ -98,10 +93,19 @@ export class Tokenizer {
     while ((lastChar = this.getChar()) !== quote) {
       this.identifierStr += lastChar;
     }
+    this.identifierStr += lastChar;
     return Token.IDENTIFIER;
+  }
+
+  private previewNextChar(i: number = 0): string {
+    return this.html[this.pos + i];
   }
 
   private getChar(): string {
     return this.html[this.pos++] || '';
+  }
+
+  private stepback() {
+    this.pos--;
   }
 }
